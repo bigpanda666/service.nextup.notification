@@ -297,88 +297,88 @@ class Player(xbmc.Player):
     			    return
 			
 
-                    self.currentepisodeid = currentepisodeid
-                    self.logMsg("Getting details of next up episode for tvshow id: " + str(tvshowid), 1)
-                    if self.currenttvshowid != tvshowid:
-                        self.currenttvshowid = tvshowid
-                        self.playedinarow = 1
+	                    self.currentepisodeid = currentepisodeid
+	                    self.logMsg("Getting details of next up episode for tvshow id: " + str(tvshowid), 1)
+	                    if self.currenttvshowid != tvshowid:
+	                        self.currenttvshowid = tvshowid
+	                        self.playedinarow = 1
+	
+	                    result = xbmc.executeJSONRPC(
+	                        '{"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodes", "params": {"tvshowid": %d, '
+	                        '"properties": [ "title", "playcount", "season", "episode", "showtitle", "plot", '
+	                        '"file", "rating", "resume", "tvshowid", "art", "firstaired", "runtime", "writer", '
+	                        '"dateadded", "lastplayed" , "streamdetails"], "sort": {"method": "episode"}}, "id": 1}'
+	                        % tvshowid)
+	
+	                    if result:
+	                        result = unicode(result, 'utf-8', errors='ignore')
+	                        result = json.loads(result)
+	                        self.logMsg("Got details of next up episode %s" % str(result), 2)
+	                        xbmc.sleep(100)
 
-                    result = xbmc.executeJSONRPC(
-                        '{"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodes", "params": {"tvshowid": %d, '
-                        '"properties": [ "title", "playcount", "season", "episode", "showtitle", "plot", '
-                        '"file", "rating", "resume", "tvshowid", "art", "firstaired", "runtime", "writer", '
-                        '"dateadded", "lastplayed" , "streamdetails"], "sort": {"method": "episode"}}, "id": 1}'
-                        % tvshowid)
-
-                    if result:
-                        result = unicode(result, 'utf-8', errors='ignore')
-                        result = json.loads(result)
-                        self.logMsg("Got details of next up episode %s" % str(result), 2)
-                        xbmc.sleep(100)
-
-                        # Find the next unwatched and the newest added episodes
-                        if "result" in result and "episodes" in result["result"]:
-                            includeWatched = addonSettings.getSetting("includeWatched") == "true"
-                            episode = self.findNextEpisode(result, currentFile, includeWatched)
-
-                            if episode is None:
-                                # no episode get out of here
-                                return
-                            self.logMsg("episode details %s" % str(episode), 2)
-                            episodeid = episode["episodeid"]
-
-                            if includeWatched:
-                                includePlaycount = True
-                            else:
-                                includePlaycount = episode["playcount"] == 0
-                            if includePlaycount and currentepisodeid != episodeid:
-                                # we have a next up episode
-                                nextUpPage = NextUpInfo("script-nextup-notification-NextUpInfo.xml",
-                                                        addonSettings.getAddonInfo('path'), "default", "1080i")
-                                nextUpPage.setItem(episode)
-                                stillWatchingPage = StillWatchingInfo(
-                                    "script-nextup-notification-StillWatchingInfo.xml",
-                                    addonSettings.getAddonInfo('path'), "default", "1080i")
-                                stillWatchingPage.setItem(episode)
-                                playedinarownumber = addonSettings.getSetting("playedInARow")
-                                self.logMsg("played in a row settings %s" % str(playedinarownumber), 2)
-                                self.logMsg("played in a row %s" % str(self.playedinarow), 2)
-                                if int(self.playedinarow) <= int(playedinarownumber):
-                                    self.logMsg(
-                                        "showing next up page as played in a row is %s" % str(self.playedinarow), 2)
-                                    nextUpPage.show()
-                                else:
-                                    self.logMsg(
-                                        "showing still watching page as played in a row %s" % str(self.playedinarow), 2)
-                                    stillWatchingPage.show()
-                                playTime = xbmc.Player().getTime()
-                                totalTime = xbmc.Player().getTotalTime()
-                                while xbmc.Player().isPlaying() and (
-                                                totalTime - playTime > 1) and not nextUpPage.isCancel() and not nextUpPage.isWatchNow() and not stillWatchingPage.isStillWatching() and not stillWatchingPage.isCancel():
-                                    xbmc.sleep(100)
-                                    try:
-                                        playTime = xbmc.Player().getTime()
-                                        totalTime = xbmc.Player().getTotalTime()
-                                    except:
-                                        pass
-
-                                if int(self.playedinarow) <= int(playedinarownumber):
-                                    nextUpPage.close()
-                                    shouldPlayDefault = not nextUpPage.isCancel()
-                                    shouldPlayNonDefault = nextUpPage.isWatchNow()
-                                else:
-                                    stillWatchingPage.close()
-                                    shouldPlayDefault = stillWatchingPage.isStillWatching()
-                                    shouldPlayNonDefault = stillWatchingPage.isStillWatching()
-
-                                if nextUpPage.isWatchNow() or stillWatchingPage.isStillWatching():
-                                    self.playedinarow = 1
-                                else:
-                                    self.playedinarow += 1
-                                if (shouldPlayDefault and playMode == "0") or (
-                                        shouldPlayNonDefault and playMode == "1"):
-                                    self.logMsg("playing media episode id %s" % str(episodeid), 2)
-                                    # Play media
-                                    xbmc.executeJSONRPC(
-                                        '{ "jsonrpc": "2.0", "id": 0, "method": "Player.Open", '
-                                        '"params": { "item": {"episodeid": ' + str(episode["episodeid"]) + '} } }')
+	                        # Find the next unwatched and the newest added episodes
+	                        if "result" in result and "episodes" in result["result"]:
+	                            includeWatched = addonSettings.getSetting("includeWatched") == "true"
+	                            episode = self.findNextEpisode(result, currentFile, includeWatched)
+	
+	                            if episode is None:
+	                                # no episode get out of here
+	                                return
+	                            self.logMsg("episode details %s" % str(episode), 2)
+	                            episodeid = episode["episodeid"]
+	
+	                            if includeWatched:
+	                                includePlaycount = True
+	                            else:
+	                                includePlaycount = episode["playcount"] == 0
+	                            if includePlaycount and currentepisodeid != episodeid:
+	                                # we have a next up episode
+	                                nextUpPage = NextUpInfo("script-nextup-notification-NextUpInfo.xml",
+	                                                        addonSettings.getAddonInfo('path'), "default", "1080i")
+	                                nextUpPage.setItem(episode)
+	                                stillWatchingPage = StillWatchingInfo(
+	                                    "script-nextup-notification-StillWatchingInfo.xml",
+	                                    addonSettings.getAddonInfo('path'), "default", "1080i")
+	                                stillWatchingPage.setItem(episode)
+	                                playedinarownumber = addonSettings.getSetting("playedInARow")
+	                                self.logMsg("played in a row settings %s" % str(playedinarownumber), 2)
+	                                self.logMsg("played in a row %s" % str(self.playedinarow), 2)
+	                                if int(self.playedinarow) <= int(playedinarownumber):
+	                                    self.logMsg(
+	                                        "showing next up page as played in a row is %s" % str(self.playedinarow), 2)
+	                                    nextUpPage.show()
+	                                else:
+	                                    self.logMsg(
+	                                        "showing still watching page as played in a row %s" % str(self.playedinarow), 2)
+	                                    stillWatchingPage.show()
+	                                playTime = xbmc.Player().getTime()
+	                                totalTime = xbmc.Player().getTotalTime()
+	                                while xbmc.Player().isPlaying() and (
+	                                                totalTime - playTime > 1) and not nextUpPage.isCancel() and not nextUpPage.isWatchNow() and not stillWatchingPage.isStillWatching() and not stillWatchingPage.isCancel():
+	                                    xbmc.sleep(100)
+	                                    try:
+	                                        playTime = xbmc.Player().getTime()
+	                                        totalTime = xbmc.Player().getTotalTime()
+	                                    except:
+	                                        pass
+	
+	                                if int(self.playedinarow) <= int(playedinarownumber):
+	                                    nextUpPage.close()
+	                                    shouldPlayDefault = not nextUpPage.isCancel()
+	                                    shouldPlayNonDefault = nextUpPage.isWatchNow()
+	                                else:
+	                                    stillWatchingPage.close()
+	                                    shouldPlayDefault = stillWatchingPage.isStillWatching()
+	                                    shouldPlayNonDefault = stillWatchingPage.isStillWatching()
+	
+	                                if nextUpPage.isWatchNow() or stillWatchingPage.isStillWatching():
+	                                    self.playedinarow = 1
+	                                else:
+	                                    self.playedinarow += 1
+	                                if (shouldPlayDefault and playMode == "0") or (
+	                                        shouldPlayNonDefault and playMode == "1"):
+	                                    self.logMsg("playing media episode id %s" % str(episodeid), 2)
+	                                    # Play media
+	                                    xbmc.executeJSONRPC(
+	                                        '{ "jsonrpc": "2.0", "id": 0, "method": "Player.Open", '
+	                                        '"params": { "item": {"episodeid": ' + str(episode["episodeid"]) + '} } }')
